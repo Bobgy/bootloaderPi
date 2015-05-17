@@ -92,11 +92,11 @@ int notmain ( void )
     while(1)
     {
         ra=timer_tick();
-        if((ra-rx)>=2000000)
+        if((ra-rx)>=1000000) //reset if no input for more than 1 second
         {
             state=0;
             uart_send(0x15);
-            rx+=2000000;
+            rx+=1000000;
         }
         if((uart_lcr()&0x01)==0) continue;
         xstring[state]=uart_recv();
@@ -110,7 +110,7 @@ int notmain ( void )
                 switch(xstring[state]){
                     case 0x01: //load a block
                     {
-                        state=2;
+                        state=1;
                         break;
                     }
                     case 0x02: //peek
@@ -144,12 +144,14 @@ int notmain ( void )
                         BRANCHTO(ARMBASE);
                         break;
                     }
-                    case 0x06: //verify
+                    case 0x06: //start verifying
                     {
                         addr=ARMBASE;
                         block=1;
                         veri=1;
                         state=0;
+                        uart_send(0x06);
+                        uart_flush();
                         break;
                     }
                     case 0x07: //start sending
@@ -158,6 +160,8 @@ int notmain ( void )
                         block=1;
                         veri=0;
                         state=0;
+                        uart_send(0x06);
+                        uart_flush();
                         break;
                     }
                     default:

@@ -31,8 +31,14 @@ def load_data(sp, addr, verify=False):
      data = map(lambda c: ord(c), file(addr,"rb").read())
 
      read_info(sp)
+     sp.flushInput()
 
      sp.write(chr(0x06 if verify else 0x07))
+     sp.flush()
+     temp = sp.read()
+     if temp != 0x06:
+          print('error')
+          return
 
      dataLength = len(data)
      blockNum = (dataLength-1)/128+1
