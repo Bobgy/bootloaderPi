@@ -16,17 +16,23 @@ def open(aport='/dev/ttyUSB0', abaudrate=115200) :
           timeout=None            # set a timeout value, None for waiting forever
      )
 
+def read_info(sp, n=0):
+    temp=sp.read()
+    cnt = 1
+    while ord(temp)!=0x15:
+        sys.stdout.write(temp)
+        if cnt==n:
+            break
+        temp=sp.read()
+        cnt += 1
+    print('')
+
 def load_data(sp, addr, verify=False):
-     print(addr)
      data = map(lambda c: ord(c), file(addr,"rb").read())
-     temp = sp.read()
-     buf = ""
 
-     while ord(temp)!=0x15:
-          buf += temp
-          temp = sp.read()
+     read_info(sp)
 
-     print(buf)
+     sp.write(chr(0x06 if verify else 0x07))
 
      dataLength = len(data)
      blockNum = (dataLength-1)/128+1
@@ -34,10 +40,16 @@ def load_data(sp, addr, verify=False):
      print "Total block number is ",blockNum,"!"
      print "Download start,",blockNum,"block(s) in total!"
 
+     success_file = True
+
      for i in range(1,blockNum+1):
           success = False
 
+          cnt = 0
           while success == False:
+               if cnt > 5:
+                    break
+               sp.flushInput()
                sp.write(chr(0x01))
                sp.write(chr(i&0xFF))
                sp.write(chr(0xFF-i&0xFF))
@@ -55,13 +67,27 @@ def load_data(sp, addr, verify=False):
                sp.write(chr(crc))
                sp.flush()
                temp=sp.read()
-               sp.flushInput()
 
                if ord(temp)==0x06:
                     success = True
                     print "Block",i,"has finished!"
+                    if verify:
+                         same=sp.read()
+                         if ord(same):
+                              print("Block",i,"is the same!")
+                         else:
+                              print("Block",i,"is different!")
                else:
                     print "Error,send again!"
+                    cnt += 1
+          if not success:
+               print("Sending file failed!")
+               success_file = False
+               break
+
+     if not success_file:
+          read_info(sp)
+          return
 
      sp.write(chr(0x04))
      sp.flush()
@@ -83,17 +109,6 @@ def send_int(sp, x):
           sum += x & 0xff
           x >>= 8
      return sum
-
-def read_info(sp, n=0):
-    temp=sp.read()
-    cnt = 1
-    while ord(temp)!=0x15:
-        sys.stdout.write(temp)
-        if cnt==n:
-            break
-        temp=sp.read()
-        cnt += 1
-    print('')
 
 def  peek(sp, pos):
      sp.flushInput()

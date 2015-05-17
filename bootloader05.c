@@ -42,7 +42,8 @@ unsigned int get_int(unsigned int state)
 
 void print_info(char *s)
 {
-    while (*(s++)) uart_send(*s);
+    for (; *s; ++s)
+		uart_send(*s);
 }
 
 int notmain ( void )
@@ -91,14 +92,11 @@ int notmain ( void )
     while(1)
     {
         ra=timer_tick();
-        if((ra-rx)>=1000000)
+        if((ra-rx)>=2000000)
         {
             state=0;
-            addr=ARMBASE;
-            veri=0;
-            block=1;
             uart_send(0x15);
-            rx+=1000000;
+            rx+=2000000;
         }
         if((uart_lcr()&0x01)==0) continue;
         xstring[state]=uart_recv();
@@ -112,8 +110,7 @@ int notmain ( void )
                 switch(xstring[state]){
                     case 0x01: //load a block
                     {
-                        veri=0;
-                        state++;
+                        state=2;
                         break;
                     }
                     case 0x02: //peek
@@ -129,8 +126,11 @@ int notmain ( void )
                     case 0x04: //finish sending
                     {
                         addr=ARMBASE;
+                        block=1;
+                        veri=0;
                         uart_send(0x06);
                         uart_flush();
+                        state=0;
                         break;
                     }
                     case 0x05: //go
@@ -146,9 +146,18 @@ int notmain ( void )
                     }
                     case 0x06: //verify
                     {
-                        uart_send(0x06);
-                        state=2;
+                        addr=ARMBASE;
+                        block=1;
                         veri=1;
+                        state=0;
+                        break;
+                    }
+                    case 0x07: //start sending
+                    {
+                        addr=ARMBASE;
+                        block=1;
+                        veri=0;
+                        state=0;
                         break;
                     }
                     default:
@@ -215,6 +224,7 @@ int notmain ( void )
                 {
                     uart_send(0x15);
                 }
+                uart_flush();
                 state=0;
                 break;
             }
@@ -232,12 +242,12 @@ int notmain ( void )
                     hexstring(pos);
                     print_info("value: ");
                     hexstring(val);
-                    uart_flush();
                 }
                 else
                 {
                     uart_send(0x15);
                 }
+                uart_flush();
                 state=0;
                 break;
             }
@@ -258,12 +268,12 @@ int notmain ( void )
                     PUT32(pos, val);
                     print_info("new value: ");
                     hexstring(GET32(pos));
-                    uart_flush();
                 }
                 else
                 {
                     uart_send(0x15);
                 }
+                uart_flush();
                 state=0;
                 break;
             }
