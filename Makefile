@@ -9,11 +9,9 @@ all : gcc clang
 
 clean :
 	rm -f *.o
-	rm -f *.bin
 	rm -f *.hex
 	rm -f *.elf
 	rm -f *.list
-	rm -f *.img
 	rm -f *.bc
 	rm -f *.clang.s
 
