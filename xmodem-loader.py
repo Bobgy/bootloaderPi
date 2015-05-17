@@ -107,9 +107,10 @@ def  peek(sp, pos):
      if ord(temp)!=0x06:
          print('error')
      else:
-          read_info(sp, 8)
+          read_info(sp)
 
 def poke(sp, pos, data):
+     sp.flushInput()
      pos = eval(pos)
      data = eval(data)
      sum = 3
@@ -121,6 +122,8 @@ def poke(sp, pos, data):
      temp = sp.read()
      if ord(temp)!=0x06:
           print('error')
+     else:
+          read_info(sp)
 
 if __name__ == "__main__":
 
@@ -159,9 +162,7 @@ if __name__ == "__main__":
      read_info(sp)
 
      while True:
-          sys.stdout.write('$')
-          cmd = raw_input()
-          args = cmd.split();
+          args = raw_input('$ ').split();
           if len(args) == 2 and args[0] == 'load':
                load_data(sp, args[1])
           elif len(args) == 1 and args[0] == 'go':

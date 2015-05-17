@@ -34,6 +34,17 @@ extern unsigned int timer_tick ( void );
 //------------------------------------------------------------------------
 unsigned char xstring[256];
 //------------------------------------------------------------------------
+
+unsigned int get_int(unsigned int state)
+{
+    return (unsigned int)xstring[state]<<24|(unsigned int)xstring[state-1]<<16|(unsigned int)xstring[state-2]<<8|xstring[state-3];
+}
+
+void print_info(char *s)
+{
+    while (*s)uart_send(*s);
+}
+
 int notmain ( void )
 {
     unsigned int ra;
@@ -80,10 +91,14 @@ int notmain ( void )
     while(1)
     {
         ra=timer_tick();
-        if((ra-rx)>=4000000)
+        if((ra-rx)>=1000000)
         {
+            state=0;
+            addr=ARMBASE;
+            veri=0;
+            block=1;
             uart_send(0x15);
-            rx+=4000000;
+            rx+=1000000;
         }
         if((uart_lcr()&0x01)==0) continue;
         xstring[state]=uart_recv();
@@ -95,7 +110,7 @@ int notmain ( void )
             {
                 crc=xstring[state];
                 switch(xstring[state]){
-                    case 0x01:
+                    case 0x01: //load a block
                     {
                         veri=0;
                         state++;
@@ -210,10 +225,13 @@ int notmain ( void )
                 if(crc==xstring[state])
                 {
                     state--;
-                    pos = (unsigned int)xstring[state]<<24|(unsigned int)xstring[state-1]<<16|(unsigned int)xstring[state-2]<<8|xstring[state-3];
+                    pos = get_int(state);
                     val = GET32(pos);
                     uart_send(0x06);
-                    hexstrings(val);
+                    print_info("address: ");
+                    hexstring(pos);
+                    print_info("value: ");
+                    hexstring(val);
                     uart_flush();
                 }
                 else
@@ -229,10 +247,18 @@ int notmain ( void )
                 crc&=0xff;
                 if(crc==xstring[state])
                 {
-                    pos = (unsigned int)xstring[state-4]<<24|(unsigned int)xstring[state-5]<<16|(unsigned int)xstring[state-6]<<8|xstring[state-7];
-                    val = (unsigned int)xstring[state]<<24|(unsigned int)xstring[state-1]<<16|(unsigned int)xstring[state-2]<<8|xstring[state-3];
-                    PUT32(pos, val);
+                    state--;
+                    pos = get_int(state-4);
+                    val = get_int(state);
                     uart_send(0x06);
+                    print_info("address: ");
+                    hexstring(pos);
+                    print_info("old value: ");
+                    hexstring(GET32(pos));
+                    PUT32(pos, val);
+                    print_info("new value: ");
+                    hexstring(GET32(pos));
+                    uart_flush();
                 }
                 else
                 {
