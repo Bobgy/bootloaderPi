@@ -42,7 +42,7 @@ unsigned int get_int(unsigned int state)
 
 void print_info(char *s)
 {
-    while (*s)uart_send(*s);
+    while (*(s++)) uart_send(*s);
 }
 
 int notmain ( void )

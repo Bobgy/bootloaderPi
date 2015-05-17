@@ -1,3 +1,8 @@
+*~
+*.elf
+*.list
+*.hex
+
 # Compiled Object files
 *.slo
 *.lo
