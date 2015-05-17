@@ -29,14 +29,12 @@ def read_info(sp, n=0):
 
 def load_data(sp, addr, verify=False):
      data = map(lambda c: ord(c), file(addr,"rb").read())
-
-     read_info(sp)
      sp.flushInput()
 
      sp.write(chr(0x06 if verify else 0x07))
      sp.flush()
      temp = sp.read()
-     if temp != 0x06:
+     if ord(temp) != 0x06:
           print('error')
           return
 
@@ -80,14 +78,14 @@ def load_data(sp, addr, verify=False):
                     if verify:
                          same=sp.read()
                          if ord(same):
-                              print("Block",i,"is the same!")
+                              print "Block",i,"is the same!"
                          else:
-                              print("Block",i,"is different!")
+                              print "Block",i,"is different!"
                else:
                     print "Error,send again!"
                     cnt += 1
           if not success:
-               print("Sending file failed!")
+               print "Sending file failed!"
                success_file = False
                break
 
