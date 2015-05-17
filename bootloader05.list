@@ -288,7 +288,7 @@ Disassembly of section .text:
   2003c0:	e58d2010 	str	r2, [sp, #16]
   2003c4:	ebffff36 	bl	2000a4 <uart_flush>
   2003c8:	eaffffbd 	b	2002c4 <notmain+0x68>
-  2003cc:	e3a06088 	mov	r6, #136	; 0x88
+  2003cc:	e3a06089 	mov	r6, #137	; 0x89
   2003d0:	eaffffbb 	b	2002c4 <notmain+0x68>
   2003d4:	e3a06084 	mov	r6, #132	; 0x84
   2003d8:	eaffffb9 	b	2002c4 <notmain+0x68>

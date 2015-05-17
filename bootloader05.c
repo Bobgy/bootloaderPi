@@ -108,7 +108,7 @@ int notmain ( void )
                     }
                     case 0x03: //poke
                     {
-                        state=136;
+                        state=137;
                         break;
                     }
                     case 0x04: //finish sending

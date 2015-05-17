@@ -17,6 +17,7 @@ def open(aport='/dev/ttyUSB0', abaudrate=115200) :
      )
 
 def load_data(sp, addr, verify=False):
+     print(addr)
      data = map(lambda c: ord(c), file(addr,"rb").read())
      temp = sp.read()
      buf = ""
@@ -69,8 +70,6 @@ def load_data(sp, addr, verify=False):
      if ord(temp)==0x06:
           print "Download has finished!"
 
-     sp.read(33*11-3)
-
 def go(sp):
      sp.write(chr(0x05))
      write=sys.stdout.write
@@ -78,23 +77,50 @@ def go(sp):
           write(sp.read())
 
 def send_int(sp, x):
-     t=4;
-     while t>0:
-          sp.send(chr(x&0xff))
+     sum = 0
+     for i in xrange(0, 4):
+          sp.write(chr(x&0xff))
+          sum += x & 0xff
           x >>= 8
-          t -= 1;
+     return sum
+
+def read_info(sp, n=0):
+    temp=sp.read()
+    cnt = 1
+    while ord(temp)!=0x15:
+        sys.stdout.write(temp)
+        if cnt==n:
+            break
+        temp=sp.read()
+        cnt += 1
+    print('')
 
 def  peek(sp, pos):
+     sp.flushInput()
      pos = eval(pos)
-     send_int(sp, pos)
-     sys.stdout.write(sp.read(4))
-
+     sum = 2
+     sp.write(chr(0x02))
+     sum += send_int(sp, pos)
+     sp.write(chr(sum&0xff))
+     sp.flush()
+     temp=sp.read()
+     if ord(temp)!=0x06:
+         print('error')
+     else:
+          read_info(sp, 8)
 
 def poke(sp, pos, data):
      pos = eval(pos)
      data = eval(data)
-     send_int(sp, pos)
-     send_int(sp, data)
+     sum = 3
+     sp.write(chr(0x03))
+     sum += send_int(sp, pos)
+     sum += send_int(sp, data)
+     sp.write(chr(sum&0xff))
+     sp.flush()
+     temp = sp.read()
+     if ord(temp)!=0x06:
+          print('error')
 
 if __name__ == "__main__":
 
@@ -125,17 +151,17 @@ if __name__ == "__main__":
           else:
                assert False, "unhandled option"
 
-     #sp = open(conf['port'], conf['baud'])
+     sp = open(conf['port'], conf['baud'])
 
-     print args[0]
      print conf['port']
      print conf['baud']
 
+     read_info(sp)
 
      while True:
+          sys.stdout.write('$')
           cmd = raw_input()
           args = cmd.split();
-          print(args)
           if len(args) == 2 and args[0] == 'load':
                load_data(sp, args[1])
           elif len(args) == 1 and args[0] == 'go':
@@ -145,6 +171,6 @@ if __name__ == "__main__":
           elif len(args) == 3 and args[0] == 'poke':
                poke(sp, args[1], args[2])
           elif  len(args) == 2 and args[0] == 'verify':
-               verify(sp, args[1])
+               load_data(sp, args[1], 1)
 
      sp.close()
